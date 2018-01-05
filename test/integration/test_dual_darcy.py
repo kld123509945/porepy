@@ -183,8 +183,9 @@ def setup_3d(nx, simplex_grid=False):
 
         # Source and sink
         src = np.zeros(g.num_cells)
-        src[0] = np.pi
-        src[-1] = -np.pi
+        if g.dim > 0:
+            src[0] = np.pi
+            src[-1] = -np.pi
         param.set_source('flow', src)
         d['param'] = param
 
