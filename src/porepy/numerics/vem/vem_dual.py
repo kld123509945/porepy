@@ -348,18 +348,16 @@ class DualVEM(Solver):
         if bc is None:
             return rhs
 
-        is_p = np.hstack((np.zeros(g.num_faces, dtype=np.bool),
-                          np.ones(g.num_cells, dtype=np.bool)))
+        faces, _, sign = sps.find(g.cell_faces)
+        sign = sign[np.unique(faces, return_index=True)[1]]
 
         if np.any(bc.is_dir):
             is_dir = np.where(bc.is_dir)[0]
-            faces, _, sign = sps.find(g.cell_faces)
-            sign = sign[np.unique(faces, return_index=True)[1]]
-            rhs[is_dir] += -sign[is_dir] * bc_val[is_dir]
+            rhs[is_dir] += -sign[is_dir]*bc_val[is_dir]
 
         if np.any(bc.is_neu):
             is_neu = np.where(bc.is_neu)[0]
-            rhs[is_neu] = bc_weight * bc_val[is_neu]
+            rhs[is_neu] = sign[is_neu]*bc_weight*bc_val[is_neu]
 
         return rhs
 
