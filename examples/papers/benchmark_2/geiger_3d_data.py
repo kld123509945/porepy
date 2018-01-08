@@ -13,6 +13,7 @@ class DarcyModelData(elliptic.EllipticDataAssigner):
 
         self.apert = kwargs.get('aperture', 1e-4)
         self.km = kwargs.get('km', 1)
+        self.km_low = kwargs.get('km_low', 1)
         self.kf = kwargs['kf']
         self.max_dim = kwargs.get('max_dim', 3)
 
@@ -57,10 +58,31 @@ class DarcyModelData(elliptic.EllipticDataAssigner):
 
         return bc_val
 
+    def low_zones(self):
+        zone_0 = np.logical_and(self.grid().cell_centers[0, :] > 0.5,
+                                self.grid().cell_centers[1, :] < 0.5)
+
+        zone_1 = np.logical_and.reduce(tuple([\
+                                      self.grid().cell_centers[0, :] > 0.75,
+                                      self.grid().cell_centers[1, :] > 0.5,
+                                      self.grid().cell_centers[1, :] < 0.75,
+                                      self.grid().cell_centers[2, :] > 0.5]))
+
+        zone_2 = np.logical_and.reduce(tuple([\
+                                    self.grid().cell_centers[0, :] > 0.625,
+                                    self.grid().cell_centers[0, :] < 0.75,
+                                    self.grid().cell_centers[1, :] > 0.5,
+                                    self.grid().cell_centers[1, :] < 0.625,
+                                    self.grid().cell_centers[2, :] > 0.5,
+                                    self.grid().cell_centers[2, :] < 0.75]))
+
+        return np.logical_or.reduce(tuple([zone_0, zone_1, zone_2]))
+
     def permeability(self):
         dim = self.grid().dim
         if dim == 3:
             kxx = self.km * np.ones(self.grid().num_cells)
+            kxx[self.low_zones()] = self.km_low
             return tensor.SecondOrder(dim, kxx=kxx, kyy=kxx, kzz=kxx)
         elif dim == 2:
             kxx = self.kf * np.ones(self.grid().num_cells)
